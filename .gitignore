@@ -1,0 +1,18 @@
+# Ignore all node_modules folders in the repository
+node_modules/
+
+# Ignore all environment files
+**/.env
+
+# Ignore tokens or sensitive files in any subdirectory
+**/*.key
+**/*.pem
+**/*.token
+
+# Ignore logs
+**/logs/
+**/*.log
+
+# Build and distribution directories
+**/dist/
+**/build/
