@@ -1,6 +1,6 @@
-import api from '../index'
+import { Hono } from 'hono'
 
-const user = api.basePath('user')
+const user = new Hono().basePath('user')
 
 user.post('signup', async (c) => {
     return c.text('user signup')

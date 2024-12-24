@@ -1,6 +1,6 @@
-import { api } from '../index'
+import { Hono } from 'hono'
 
-const blog = api.basePath('blog')
+const blog = new Hono().basePath('blog')
 
 blog.post('', async (c) => {
     return c.text("blog post")
