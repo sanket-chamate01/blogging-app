@@ -10,6 +10,8 @@ DATABASE_URL="prisma://accelerate.prisma-data.net/?api_key=eyJhbGciOiJIUzI1NiIsI
 
 DIRECT_URL="postgresql://neondb_owner:tZNuHRJlfp72@ep-super-shadow-a575hh16.us-east-2.aws.neon.tech/neondb?sslmode=require"
 
+JWT_SECRET="secretKey"
+
 # [[kv_namespaces]]
 # binding = "MY_KV_NAMESPACE"
 # id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"

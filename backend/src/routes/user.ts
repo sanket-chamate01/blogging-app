@@ -1,21 +1,23 @@
 import { Hono } from 'hono'
 import { PrismaClient } from '@prisma/client/edge'
 import { withAccelerate } from '@prisma/extension-accelerate'
+import { sign } from 'hono/jwt'
 
 const user = new Hono<{
     Bindings: {
-        DATABASE_URL: string
+        DATABASE_URL: string,
+        JWT_SECRET: string
     }
-}>().basePath('user')
+}>()
 
-user.post('signup', async (c) => {
+user.post('/signup', async (c) => {
     const prisma = new PrismaClient({
         datasourceUrl: c.env.DATABASE_URL,
     }).$extends(withAccelerate())
 
     const body = await c.req.json()
 
-    await prisma.user.create({
+    const currentUser = await prisma.user.create({
         data: {
             email: body.email,
             password: body.password,
@@ -23,11 +25,38 @@ user.post('signup', async (c) => {
         }
     })
 
-    return c.text('user signup')
+    const token = await sign({id: currentUser.id}, c.env.JWT_SECRET)
+    console.log('user signup')
+    return c.json({
+        jwtToken: token
+    })
 })
 
-user.post('signin', async (c) => {
-    return c.text('user signin')
+user.post('/signin', async (c) => {
+    const prisma = new PrismaClient({
+        datasourceUrl: c.env.DATABASE_URL,
+    }).$extends(withAccelerate())
+
+    const body = await c.req.json()
+
+    const currentUser = await prisma.user.findUnique({
+        where: {
+            email: body.email
+        }
+    })
+
+    if(!currentUser) {
+        c.status(403)
+        return c.json({
+            message: 'User not found'
+        })
+    }
+
+    const token = await sign({id: currentUser.id}, c.env.JWT_SECRET)
+    console.log('user signin')
+    return c.json({
+        jwtToken: token
+    })
 })
 
 export default user
