@@ -7,6 +7,9 @@ const blog = new Hono<{
     Bindings: {
         JWT_SECRET: string,
         DATABASE_URL: string
+    },
+    Variables: {
+        userId: string
     }
 }>()
 
@@ -24,7 +27,7 @@ blog.post('', async (c) => {
             data: {
                 title: body.title,
                 content: body.content,
-                authorId: c.get('user').id
+                authorId: c.get('userId')
             }
         })
         
@@ -57,6 +60,7 @@ blog.put('', async (c) => {
             data: {
                 title: body.title,
                 content: body.content,
+                published: body.published
             }
         })
         
@@ -81,8 +85,6 @@ blog.get('/:id', async (c) => {
             datasourceUrl: c.env.DATABASE_URL,
         }).$extends(withAccelerate())
 
-        const body = await c.req.json()
-
         const currentBlog = await prisma.post.findFirst({
             where: {
                 id
@@ -96,7 +98,7 @@ blog.get('/:id', async (c) => {
         console.log("blog: ", currentBlog)
 
         return c.json({
-            id: currentBlog.id,
+            blog: currentBlog,
         })
 
     } catch (error) {
@@ -110,18 +112,18 @@ blog.get('/:id', async (c) => {
 
 // add pagination
 
-blog.get('/bulk', async (c) => { 
-    try {
-        const prisma = new PrismaClient({
-            datasourceUrl: c.env.DATABASE_URL,
-        }).$extends(withAccelerate())
+blog.get('/get/bulk', async (c) => {  // somehow when we use /bulk, the control goes to :/id and not /bulk. it considers /bulk as id
+    const prisma = new PrismaClient({
+        datasourceUrl: c.env.DATABASE_URL,
+    }).$extends(withAccelerate())
 
-        const currentBlog = await prisma.post.findMany({})
+    try {
+        const currentBlog = await prisma.post.findMany()
 
         if (!currentBlog) {
             c.status(404)
             return c.json({
-                error: 'Blogs not found' 
+                error: 'Blogs not found'
             })
         }
         
@@ -130,6 +132,7 @@ blog.get('/bulk', async (c) => {
         return c.json({
             blogs: currentBlog,
         })
+
     } catch (error) {
         console.error("Error fetching blogs: ", error)
         c.status(500)
