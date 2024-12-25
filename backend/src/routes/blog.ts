@@ -1,50 +1,110 @@
 import { Hono } from 'hono'
-import { verify } from 'hono/jwt'
+import { authMiddleware } from '../middleware/auth'
+import { PrismaClient } from '@prisma/client/edge'
+import { withAccelerate } from '@prisma/extension-accelerate'
 
 const blog = new Hono<{
     Bindings: {
-        JWT_SECRET: string
+        JWT_SECRET: string,
+        DATABASE_URL: string
     }
 }>()
 
-blog.use("/*", async (c, next) => { 
-    if (c.req.path === '/bulk') { // ignore /bulk route
-        return next();
-    }
-    const header = c.req.header('Authorization') || ''
-    const token = header.split(' ')[1]
-    if(!token) {
-        c.status(401)
-        return c.json({
-            message: 'Unauthorized'
-        })
-    }
-    const response = await verify(header, c.env.JWT_SECRET)
-    if(response) {
-        return next()
-    } else {
-        c.status(401)
-        return c.json({
-            message: 'Unauthorized'
-        })
-    }
-})
+blog.use("/*", authMiddleware)
 
 blog.post('', async (c) => {
-    return c.text("blog post")
+    const prisma = new PrismaClient({
+        datasourceUrl: c.env.DATABASE_URL,
+    }).$extends(withAccelerate())
+
+    const body = await c.req.json()
+
+    const currentBlog = await prisma.post.create({
+        data: {
+            title: body.title,
+            content: body.content,
+            authorId: c.get('user').id
+        }
+    })
+    
+    console.log("blog post: ", currentBlog)
+
+    return c.json({
+        id: currentBlog.id,
+    })
 })
 
 blog.put('', async (c) => {
-    return c.text("blog put")
+    const prisma = new PrismaClient({
+        datasourceUrl: c.env.DATABASE_URL,
+    }).$extends(withAccelerate())
+
+    const body = await c.req.json()
+
+    const currentBlog = await prisma.post.update({
+        where: {
+            id: body.id
+        },
+        data: {
+            title: body.title,
+            content: body.content,
+        }
+    })
+    
+    console.log("blog updated: ", currentBlog)
+
+    return c.json({
+        id: currentBlog.id,
+    })
 })
 
 blog.get('/:id', async (c) => { 
     const id = c.req.param('id')
-    return c.text("blog get")
+    const prisma = new PrismaClient({
+        datasourceUrl: c.env.DATABASE_URL,
+    }).$extends(withAccelerate())
+
+    const body = await c.req.json()
+
+    const currentBlog = await prisma.post.findFirst({
+        where: {
+            id
+        }
+    })
+
+    if (!currentBlog) {
+        return c.json({ error: 'Blog not found' }, 404)
+    }
+    
+    console.log("blog: ", currentBlog)
+
+    return c.json({
+        id: currentBlog.id,
+    })
 })
 
+// add pagination
+
 blog.get('/bulk', async (c) => { 
-    return c.text("blog get bulk")
+    const prisma = new PrismaClient({
+        datasourceUrl: c.env.DATABASE_URL,
+    }).$extends(withAccelerate())
+
+    const body = await c.req.json()
+
+    const currentBlog = await prisma.post.findMany({})
+
+    if (!currentBlog) {
+        return c.json({
+            error: 'Blogs not found' 
+        }, 404)
+    }
+    
+    console.log("blog: ", currentBlog)
+
+    return c.json({
+        blogs: currentBlog,
+    })
 })
 
 export default blog

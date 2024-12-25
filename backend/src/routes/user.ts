@@ -17,19 +17,26 @@ user.post('/signup', async (c) => {
 
     const body = await c.req.json()
 
-    const currentUser = await prisma.user.create({
-        data: {
-            email: body.email,
-            password: body.password,
-            name: body.name
-        }
-    })
+    try {
+        const currentUser = await prisma.user.create({
+            data: {
+                email: body.email,
+                password: body.password,
+                name: body.name
+            }
+        })
 
-    const token = await sign({id: currentUser.id}, c.env.JWT_SECRET)
-    console.log('user signup: ', currentUser)
-    return c.json({
-        jwtToken: token
-    })
+        const token = await sign({id: currentUser.id}, c.env.JWT_SECRET)
+        console.log('user signup: ', currentUser)
+        return c.json({
+            jwtToken: token
+        })
+    }catch(e) {
+        c.status(403)
+        return c.json({
+            message: 'User already exists or Invalid'
+        })
+    }
 })
 
 user.post('/signin', async (c) => {
@@ -39,25 +46,38 @@ user.post('/signin', async (c) => {
 
     const body = await c.req.json()
 
-    const currentUser = await prisma.user.findUnique({
-        where: {
-            email: body.email,
-            password: body.password
+    try {
+        const currentUser = await prisma.user.findUnique({
+            where: {
+                email: body.email
+            }
+        })
+    
+        if(!currentUser) {
+            c.status(403)
+            return c.json({
+                message: 'User not found'
+            })
         }
-    })
 
-    if(!currentUser) {
+        if(currentUser.password !== body.password) {
+            c.status(403)
+            return c.json({
+                message: 'Invalid Credentials'
+            })
+        }
+    
+        const token = await sign({id: currentUser.id}, c.env.JWT_SECRET)
+        console.log('user signin: ', currentUser)
+        return c.json({
+            jwtToken: token
+        })
+    }catch(e) {
         c.status(403)
         return c.json({
-            message: 'User not found'
+            message: 'An error occurred'
         })
     }
-
-    const token = await sign({id: currentUser.id}, c.env.JWT_SECRET)
-    console.log('user signin: ', currentUser)
-    return c.json({
-        jwtToken: token
-    })
 })
 
 export default user
