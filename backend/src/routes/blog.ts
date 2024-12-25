@@ -13,98 +13,130 @@ const blog = new Hono<{
 blog.use("/*", authMiddleware)
 
 blog.post('', async (c) => {
-    const prisma = new PrismaClient({
-        datasourceUrl: c.env.DATABASE_URL,
-    }).$extends(withAccelerate())
-
-    const body = await c.req.json()
-
-    const currentBlog = await prisma.post.create({
-        data: {
-            title: body.title,
-            content: body.content,
-            authorId: c.get('user').id
-        }
-    })
+    try {
+        const prisma = new PrismaClient({
+            datasourceUrl: c.env.DATABASE_URL,
+        }).$extends(withAccelerate())
     
-    console.log("blog post: ", currentBlog)
-
-    return c.json({
-        id: currentBlog.id,
-    })
+        const body = await c.req.json()
+    
+        const currentBlog = await prisma.post.create({
+            data: {
+                title: body.title,
+                content: body.content,
+                authorId: c.get('user').id
+            }
+        })
+        
+        console.log("blog post: ", currentBlog)
+    
+        return c.json({
+            id: currentBlog.id,
+        })
+    } catch (error) {
+        console.error("Error creating blog: ", error)
+        c.status(500)
+        return c.json({
+            error: 'Internal server error'
+        })
+    }
 })
 
 blog.put('', async (c) => {
-    const prisma = new PrismaClient({
-        datasourceUrl: c.env.DATABASE_URL,
-    }).$extends(withAccelerate())
-
-    const body = await c.req.json()
-
-    const currentBlog = await prisma.post.update({
-        where: {
-            id: body.id
-        },
-        data: {
-            title: body.title,
-            content: body.content,
-        }
-    })
+    try {
+        const prisma = new PrismaClient({
+            datasourceUrl: c.env.DATABASE_URL,
+        }).$extends(withAccelerate())
     
-    console.log("blog updated: ", currentBlog)
-
-    return c.json({
-        id: currentBlog.id,
-    })
+        const body = await c.req.json()
+    
+        const currentBlog = await prisma.post.update({
+            where: {
+                id: body.id
+            },
+            data: {
+                title: body.title,
+                content: body.content,
+            }
+        })
+        
+        console.log("blog updated: ", currentBlog)
+    
+        return c.json({
+            id: currentBlog.id,
+        })
+    } catch (error) {
+        console.error("Error updating blog: ", error)
+        c.status(500)
+        return c.json({
+            error: 'Internal server error'
+        })
+    }
 })
 
 blog.get('/:id', async (c) => { 
-    const id = c.req.param('id')
-    const prisma = new PrismaClient({
-        datasourceUrl: c.env.DATABASE_URL,
-    }).$extends(withAccelerate())
+    try {
+        const id = c.req.param('id')
+        const prisma = new PrismaClient({
+            datasourceUrl: c.env.DATABASE_URL,
+        }).$extends(withAccelerate())
 
-    const body = await c.req.json()
+        const body = await c.req.json()
 
-    const currentBlog = await prisma.post.findFirst({
-        where: {
-            id
+        const currentBlog = await prisma.post.findFirst({
+            where: {
+                id
+            }
+        })
+
+        if (!currentBlog) {
+            return c.json({ error: 'Blog not found' }, 404)
         }
-    })
+        
+        console.log("blog: ", currentBlog)
 
-    if (!currentBlog) {
-        return c.json({ error: 'Blog not found' }, 404)
+        return c.json({
+            id: currentBlog.id,
+        })
+
+    } catch (error) {
+        console.error("Error fetching blog: ", error)
+        c.status(500)
+        return c.json({
+            error: 'Internal server error'
+        })
     }
-    
-    console.log("blog: ", currentBlog)
-
-    return c.json({
-        id: currentBlog.id,
-    })
 })
 
 // add pagination
 
 blog.get('/bulk', async (c) => { 
-    const prisma = new PrismaClient({
-        datasourceUrl: c.env.DATABASE_URL,
-    }).$extends(withAccelerate())
+    try {
+        const prisma = new PrismaClient({
+            datasourceUrl: c.env.DATABASE_URL,
+        }).$extends(withAccelerate())
 
-    const body = await c.req.json()
+        const currentBlog = await prisma.post.findMany({})
 
-    const currentBlog = await prisma.post.findMany({})
+        if (!currentBlog) {
+            c.status(404)
+            return c.json({
+                error: 'Blogs not found' 
+            })
+        }
+        
+        console.log("blog: ", currentBlog)
 
-    if (!currentBlog) {
         return c.json({
-            error: 'Blogs not found' 
-        }, 404)
+            blogs: currentBlog,
+        })
+    } catch (error) {
+        console.error("Error fetching blogs: ", error)
+        c.status(500)
+        return c.json({
+            error: 'Internal server error'
+        })
     }
-    
-    console.log("blog: ", currentBlog)
-
-    return c.json({
-        blogs: currentBlog,
-    })
 })
 
 export default blog
