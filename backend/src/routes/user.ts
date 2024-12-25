@@ -26,7 +26,7 @@ user.post('/signup', async (c) => {
     })
 
     const token = await sign({id: currentUser.id}, c.env.JWT_SECRET)
-    console.log('user signup')
+    console.log('user signup: ', currentUser)
     return c.json({
         jwtToken: token
     })
@@ -41,7 +41,8 @@ user.post('/signin', async (c) => {
 
     const currentUser = await prisma.user.findUnique({
         where: {
-            email: body.email
+            email: body.email,
+            password: body.password
         }
     })
 
@@ -53,7 +54,7 @@ user.post('/signin', async (c) => {
     }
 
     const token = await sign({id: currentUser.id}, c.env.JWT_SECRET)
-    console.log('user signin')
+    console.log('user signin: ', currentUser)
     return c.json({
         jwtToken: token
     })
