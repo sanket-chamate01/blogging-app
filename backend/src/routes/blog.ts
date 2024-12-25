@@ -13,6 +13,38 @@ const blog = new Hono<{
     }
 }>()
 
+// add pagination
+
+blog.get('/get/bulk', async (c) => {  // somehow when we use /bulk, the control goes to :/id and not /bulk. it considers /bulk as id. we can do this or move /bulk to the top of :id route
+    const prisma = new PrismaClient({
+        datasourceUrl: c.env.DATABASE_URL,
+    }).$extends(withAccelerate())
+
+    try {
+        const currentBlog = await prisma.post.findMany()
+
+        if (!currentBlog) {
+            c.status(404)
+            return c.json({
+                error: 'Blogs not found'
+            })
+        }
+        
+        console.log("blog: ", currentBlog)
+
+        return c.json({
+            blogs: currentBlog,
+        })
+
+    } catch (error) {
+        console.error("Error fetching blogs: ", error)
+        c.status(500)
+        return c.json({
+            error: 'Internal server error'
+        })
+    }
+})
+
 blog.use("/*", authMiddleware)
 
 blog.post('', async (c) => {
@@ -103,38 +135,6 @@ blog.get('/:id', async (c) => {
 
     } catch (error) {
         console.error("Error fetching blog: ", error)
-        c.status(500)
-        return c.json({
-            error: 'Internal server error'
-        })
-    }
-})
-
-// add pagination
-
-blog.get('/get/bulk', async (c) => {  // somehow when we use /bulk, the control goes to :/id and not /bulk. it considers /bulk as id
-    const prisma = new PrismaClient({
-        datasourceUrl: c.env.DATABASE_URL,
-    }).$extends(withAccelerate())
-
-    try {
-        const currentBlog = await prisma.post.findMany()
-
-        if (!currentBlog) {
-            c.status(404)
-            return c.json({
-                error: 'Blogs not found'
-            })
-        }
-        
-        console.log("blog: ", currentBlog)
-
-        return c.json({
-            blogs: currentBlog,
-        })
-
-    } catch (error) {
-        console.error("Error fetching blogs: ", error)
         c.status(500)
         return c.json({
             error: 'Internal server error'

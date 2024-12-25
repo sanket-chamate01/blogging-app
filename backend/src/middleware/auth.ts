@@ -2,9 +2,6 @@ import { MiddlewareHandler } from "hono";
 import { verify } from "hono/jwt";
 
 export const authMiddleware: MiddlewareHandler = async (c, next) => { 
-    // if (c.req.path === '/bulk') { // ignore /bulk route
-    //     return next();
-    // }
     const header = c.req.header('Authorization') || ''
     const token = header.split(' ')[1]
     if(!token) {
