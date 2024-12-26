@@ -2,6 +2,7 @@ import { Hono } from 'hono'
 import { authMiddleware } from '../middleware/auth'
 import { PrismaClient } from '@prisma/client/edge'
 import { withAccelerate } from '@prisma/extension-accelerate'
+import { blogSchema, idSchema, updateBlogSchema } from '../../../common/src/index'
 
 const blog = new Hono<{
     Bindings: {
@@ -52,9 +53,16 @@ blog.post('', async (c) => {
         const prisma = new PrismaClient({
             datasourceUrl: c.env.DATABASE_URL,
         }).$extends(withAccelerate())
-    
+        
         const body = await c.req.json()
-    
+        
+        const { success } = blogSchema.safeParse(body)
+        if(!success) {
+            return c.json({
+                error: 'Incorrect data'
+            }, 411)
+        }
+        
         const currentBlog = await prisma.post.create({
             data: {
                 title: body.title,
@@ -82,9 +90,16 @@ blog.put('', async (c) => {
         const prisma = new PrismaClient({
             datasourceUrl: c.env.DATABASE_URL,
         }).$extends(withAccelerate())
-    
+        
         const body = await c.req.json()
-    
+        
+        const { success } = updateBlogSchema.safeParse(body)
+        if(!success) {
+            return c.json({
+                error: 'Incorrect data'
+            }, 411)
+        }
+
         const currentBlog = await prisma.post.update({
             where: {
                 id: body.id
@@ -113,6 +128,12 @@ blog.put('', async (c) => {
 blog.get('/:id', async (c) => { 
     try {
         const id = c.req.param('id')
+        const { success } = idSchema.safeParse(id)
+        if(!success) {
+            return c.json({
+                error: 'Incorrect data'
+            }, 411)
+        }
         const prisma = new PrismaClient({
             datasourceUrl: c.env.DATABASE_URL,
         }).$extends(withAccelerate())
