@@ -2,7 +2,7 @@ import { Hono } from 'hono'
 import { PrismaClient } from '@prisma/client/edge'
 import { withAccelerate } from '@prisma/extension-accelerate'
 import { sign } from 'hono/jwt'
-import { signInSchema, signUpSchema } from '../../../common/src'
+import { signInSchema, signUpSchema } from 'common-blogging-app'
 
 const user = new Hono<{
     Bindings: {

@@ -2,7 +2,7 @@ import { Hono } from 'hono'
 import { authMiddleware } from '../middleware/auth'
 import { PrismaClient } from '@prisma/client/edge'
 import { withAccelerate } from '@prisma/extension-accelerate'
-import { blogSchema, idSchema, updateBlogSchema } from '../../../common/src/index'
+import { blogSchema, idSchema, updateBlogSchema } from 'common-blogging-app' 
 
 const blog = new Hono<{
     Bindings: {
@@ -62,7 +62,7 @@ blog.post('', async (c) => {
                 error: 'Incorrect data'
             }, 411)
         }
-        
+
         const currentBlog = await prisma.post.create({
             data: {
                 title: body.title,
