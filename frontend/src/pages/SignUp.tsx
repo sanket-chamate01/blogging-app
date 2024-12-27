@@ -1,12 +1,15 @@
+import { Auth } from "../components/Auth";
 import { Quote } from "../components/Quote";
 
 export function SignUp() {
   return (
     <div className="grid grid-cols-2">
       <div>
-        signup
+        <Auth/>
       </div>
-      <Quote/>
+      <div className="invisible lg:visible">
+        <Quote/>
+      </div>
     </div>
   )
 }
