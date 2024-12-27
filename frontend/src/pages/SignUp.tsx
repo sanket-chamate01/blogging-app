@@ -1,7 +1,12 @@
+import { Quote } from "../components/Quote";
+
 export function SignUp() {
   return (
-    <div>
-      <h1>Sign Up</h1>
+    <div className="grid grid-cols-2">
+      <div>
+        signup
+      </div>
+      <Quote/>
     </div>
   )
 }
